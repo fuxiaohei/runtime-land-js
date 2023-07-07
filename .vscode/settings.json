@@ -1,0 +1,6 @@
+{
+  "rust-analyzer.cargo.target": "wasm32-wasi",
+  "rust-analyzer.cargo.extraEnv": {
+    "QUICKJS_WASM_SYS_WASI_SDK_PATH": "/opt/wasi-sdk-20.0"
+  }
+}
