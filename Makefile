@@ -1,7 +1,7 @@
 .PHONY: release, build, js, test
 
 js:
-	echo "build js vendor"
+	cd js-lib && npx rspack build --mode=production
 
 build: js
 	cargo build --target wasm32-wasi

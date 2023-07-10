@@ -1,0 +1,19 @@
+{
+  "name": "land-js-lib",
+  "version": "0.1.0-b2",
+  "description": "runtime.land js sdk vendor library",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "fuxiaohei@vip.qq.com",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@rspack/cli": "^0.2.5"
+  },
+  "dependencies": {
+    "fast-text-encoding": "^1.0.6",
+    "headers-polyfill": "^3.1.2",
+    "url-polyfill": "^1.1.12"
+  }
+}
