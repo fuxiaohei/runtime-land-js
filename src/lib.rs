@@ -1,9 +1,11 @@
 use anyhow::Result;
+use http::{HeaderName, HeaderValue, StatusCode};
 use once_cell::sync::OnceCell;
-use quickjs_wasm_rs::{JSContextRef, JSValue, JSValueRef};
+use quickjs_wasm_rs::{Deserializer, JSContextRef, JSValue, JSValueRef, Serializer};
 use send_wrapper::SendWrapper;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::{io::Read, time::Instant};
 
 // JS_VENDOR is a global JS code to run.
@@ -14,6 +16,8 @@ static JS_MOCK_CALLER: &str = include_str!("../js-mock-caller.js");
 static JS_RUNTIME: OnceCell<SendWrapper<Runtime>> = OnceCell::new();
 // JS_GLOBAL is a global object to run JS code.
 static JS_GLOBAL: OnceCell<SendWrapper<JSValueRef>> = OnceCell::new();
+// JS_HANDLER is a global function to handle JS code.
+static JS_HANDLER: OnceCell<SendWrapper<JSValueRef>> = OnceCell::new();
 
 #[derive(Debug)]
 pub struct Runtime {
@@ -30,8 +34,8 @@ impl Runtime {
     }
 }
 
-pub fn console_log<'a>(
-    _context: &'a JSContextRef,
+pub fn console_log(
+    _context: &JSContextRef,
     _this: JSValueRef,
     args: &[JSValueRef],
 ) -> Result<JSValue> {
@@ -42,7 +46,7 @@ pub fn console_log<'a>(
         } else {
             spaced = true;
         }
-        print!("{}", arg.to_string());
+        print!("{}", arg);
     }
     println!();
     Ok(JSValue::Undefined)
@@ -87,6 +91,10 @@ fn init_js_context() -> Result<()> {
 
     JS_GLOBAL.set(SendWrapper::new(global)).unwrap();
 
+    // get handler
+    let handler = global.get_property("callHandler")?;
+    JS_HANDLER.set(SendWrapper::new(handler)).unwrap();
+
     println!("init js context: {:?}", st.elapsed());
 
     Ok(())
@@ -113,12 +121,86 @@ pub struct JsResponse {
     headers: HashMap<String, String>,
 }
 
-use land_sdk::http::{Body, Request, Response};
+use land_sdk::http::{error_response, Body, Request, Response};
 use land_sdk::http_main;
 
 #[http_main]
 pub fn handle_request(req: Request) -> Response {
-    http::Response::builder()
-        .body(Body::from("Hello Moni JS SDK!!"))
-        .unwrap()
+    match handle_js_request(req) {
+        Ok(response) => response,
+        Err(err) => {
+            println!("handle_js_request error: {:?}", err);
+            http::Response::builder()
+                .status(500)
+                .body(Body::from(err.to_string()))
+                .unwrap()
+        }
+    }
+}
+
+fn handle_js_request(req: Request) -> Result<Response> {
+    // create input JsRequest
+    let mut headers = HashMap::new();
+    req.headers().iter().for_each(|(key, value)| {
+        headers.insert(
+            key.as_str().to_string(),
+            value.to_str().unwrap().to_string(),
+        );
+    });
+    let request = JsRequest {
+        id: 1,
+        method: req.method().to_string(),
+        uri: req.uri().clone().to_string(),
+        headers,
+    };
+
+    let context = JS_RUNTIME.get().unwrap().context();
+    let mut serializer = Serializer::from_context(context)?;
+    request.serialize(&mut serializer)?;
+    let request_value = serializer.value;
+
+    let global = JS_GLOBAL.get().expect("js global not initialized");
+    let handler = JS_HANDLER.get().expect("js handler not initialized");
+
+    // call global fetch handler with request object
+    match handler.call(global, &[request_value]) {
+        Ok(_) => {
+            let mut response: JSValueRef<'_>;
+
+            loop {
+                context.execute_pending()?;
+                let global = context.global_object()?;
+                response = global
+                    .get_property("globalResponse")
+                    .expect("get globalResponse failed");
+                if response.is_undefined() || response.is_null() {
+                    continue;
+                }
+                break;
+            }
+
+            let deserializer = &mut Deserializer::from(response);
+            let response =
+                JsResponse::deserialize(deserializer).expect("deserialize response failed");
+
+            let mut builder = http::Response::builder().status(response.status);
+            if let Some(headers) = builder.headers_mut() {
+                for (key, value) in &response.headers {
+                    headers.insert(
+                        HeaderName::try_from(key.deref())?,
+                        HeaderValue::from_bytes(value.as_bytes())?,
+                    );
+                }
+            }
+
+            Ok(builder.body(Body::from("Hello js sdk")).unwrap())
+        }
+        Err(err) => {
+            println!("callHandler error: {:?}", err);
+            Ok(error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                err.to_string(),
+            ))
+        }
+    }
 }
