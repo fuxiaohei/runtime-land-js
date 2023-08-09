@@ -8,6 +8,8 @@ use std::{io::Read, time::Instant};
 
 // JS_VENDOR is a global JS code to run.
 static JS_VENDOR: &str = include_str!("../js-lib/dist/lib.js");
+// JS_MOCK_CALLER is a global JS code to run.
+static JS_MOCK_CALLER: &str = include_str!("../js-mock-caller.js");
 // JS_RUNTIME is a global runtime to run JS code.
 static JS_RUNTIME: OnceCell<SendWrapper<Runtime>> = OnceCell::new();
 // JS_GLOBAL is a global object to run JS code.
@@ -74,6 +76,11 @@ fn init_js_context() -> Result<()> {
         "run.js",
         "import fn from 'index.js'; globalThis.handler = fn;",
     )?;
+
+    // if MOCK=true in env, eval js-mock-caller once
+    if std::env::var("MOCK").is_ok() {
+        let _ = context.eval_global("js-mock-caller.js", JS_MOCK_CALLER)?;
+    }
 
     // wait for pending jobs
     context.execute_pending()?;

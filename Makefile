@@ -13,4 +13,4 @@ release: js
 	wasm-opt --strip-debug -o land_js.wasm land_js.wasm
 
 test: release
-	cat tests.js | wizer land_js.wasm -o land_js.wizer.wasm --allow-wasi --inherit-stdio=true --inherit-env=true --wasm-bulk-memory=true
+	cat js-mock.js | MOCK=true wizer land_js.wasm -o land_js.wizer.wasm --allow-wasi --inherit-stdio=true --inherit-env=true --wasm-bulk-memory=true
