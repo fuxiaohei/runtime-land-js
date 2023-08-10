@@ -10,5 +10,5 @@ module.exports = {
   output: {
     filename: "[name].js",
   },
-  target: 'node',
+  target: 'web',
 };

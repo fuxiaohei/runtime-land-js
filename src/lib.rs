@@ -46,11 +46,13 @@ pub fn console_log(
         } else {
             spaced = true;
         }
-        print!("{}", arg);
+        print!("{}", arg.as_str_lossy());
     }
     println!();
     Ok(JSValue::Undefined)
 }
+
+mod hostcall;
 
 fn init_js_context() -> Result<()> {
     let st = Instant::now();
@@ -71,14 +73,19 @@ fn init_js_context() -> Result<()> {
     console.set_property("log", context.wrap_callback(console_log)?)?;
     global.set_property("console", console)?;
 
+    // add hostcall
+    let hostcall = context.object_value()?;
+    hostcall.set_property("read_body", context.wrap_callback(hostcall::read_body)?)?;
+    global.set_property("hostcall", hostcall)?;
+
     // load vendor
     let _ = context.eval_global("vendor.js", JS_VENDOR)?;
     // load source
-    let _ = context.eval_module("index.js", &script)?;
+    let _ = context.eval_module("user.js", &script)?;
     // convert source module to global
     let _ = context.eval_module(
         "run.js",
-        "import fn from 'index.js'; globalThis.handler = fn;",
+        "import fn from 'user.js'; globalThis.handler = fn;",
     )?;
 
     // if MOCK=true in env, eval js-mock-caller once
@@ -112,6 +119,7 @@ pub struct JsRequest {
     uri: String,
     #[serde(default)]
     headers: HashMap<String, String>,
+    body_handle: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -152,6 +160,7 @@ fn handle_js_request(req: Request) -> Result<Response> {
         method: req.method().to_string(),
         uri: req.uri().clone().to_string(),
         headers,
+        body_handle: req.body().body_handle(),
     };
 
     let context = JS_RUNTIME.get().unwrap().context();
@@ -166,8 +175,8 @@ fn handle_js_request(req: Request) -> Result<Response> {
     match handler.call(global, &[request_value]) {
         Ok(_) => {
             let mut response: JSValueRef<'_>;
-
             loop {
+                println!("execute pending");
                 context.execute_pending()?;
                 let global = context.global_object()?;
                 response = global

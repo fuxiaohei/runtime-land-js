@@ -1,10 +1,18 @@
-let req = new Request();
 
-let caller = async () => {
-    console.log("get:", req.bodyUsed)
-    let resp = await req.text()
-    console.log("get-2:", req.bodyUsed)
-    console.log("resp", resp)
-}
+let data = 1;
 
-caller();
+let stream = new ReadableStream({
+    async pull(controller) {
+        console.log("---Body.pull", data)
+        if (data > 5) {
+            controller.close();
+            return;
+        }
+        let value = new TextEncoder().encode("Hello, from Request.arrayBuffer()!" + data++);
+        controller.enqueue(value);
+    }
+});
+
+let reader = stream.getReader();
+
+console.log("---stream", stream)
