@@ -12,6 +12,7 @@ serde = { version = "1.0.183", features = ["derive"] }
 land-sdk = { path = "../runtime-land/crates/sdk" }
 wit-bindgen = "0.9.0"
 http = "0.2.9"
+serde_bytes = "0.11.12"
 
 [lib]
 crate-type = ["cdylib"]

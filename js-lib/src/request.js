@@ -40,11 +40,11 @@ class Request {
     }
 
     get bodyUsed() {
-        return this.#_bodyUsed;
+        return this.body.bodyUsed;
     }
 
     get body() {
-        return this.#_body?.readable_stream;
+        return this.#_body?.stream;
     }
 
     get url() {
@@ -59,8 +59,16 @@ class Request {
         return this.#_headers;
     }
 
+    async arrayBuffer() {
+        return await this.#_body.arrayBuffer();
+    }
+
     async text() {
-        return this.#_body ? this.#_body.text() : "";
+        return await this.#_body.text();
+    }
+
+    async json() {
+        return await this.#_body.json();
     }
 
 }

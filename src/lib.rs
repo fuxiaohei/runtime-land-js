@@ -4,6 +4,7 @@ use once_cell::sync::OnceCell;
 use quickjs_wasm_rs::{Deserializer, JSContextRef, JSValue, JSValueRef, Serializer};
 use send_wrapper::SendWrapper;
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::{io::Read, time::Instant};
@@ -127,6 +128,8 @@ pub struct JsResponse {
     status: u16,
     #[serde(default)]
     headers: HashMap<String, String>,
+    body_handle: Option<u32>,
+    body: Option<ByteBuf>,
 }
 
 use land_sdk::http::{error_response, Body, Request, Response};
@@ -175,8 +178,8 @@ fn handle_js_request(req: Request) -> Result<Response> {
     match handler.call(global, &[request_value]) {
         Ok(_) => {
             let mut response: JSValueRef<'_>;
+
             loop {
-                println!("execute pending");
                 context.execute_pending()?;
                 let global = context.global_object()?;
                 response = global
@@ -202,7 +205,18 @@ fn handle_js_request(req: Request) -> Result<Response> {
                 }
             }
 
-            Ok(builder.body(Body::from("Hello js sdk")).unwrap())
+            if response.body.is_some() {
+                let body = response.body.unwrap();
+                let body = Body::from(body.to_vec());
+                return Ok(builder.body(body).unwrap());
+            }
+
+            if response.body_handle.is_some() {
+                let body = Body::new(response.body_handle.unwrap());
+                return Ok(builder.body(body).unwrap());
+            }
+
+            Ok(builder.body(Body::empty()).unwrap())
         }
         Err(err) => {
             println!("callHandler error: {:?}", err);

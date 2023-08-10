@@ -25,7 +25,7 @@ var isArrayBufferView =
 class Body {
     #_nobody = false;
     #_bodyUsed = false;
-
+    #_bodyHandle = null;
     #_bodyText = "";
     #_bodyFormData = "";
     #_bodyBuffer = null;
@@ -54,6 +54,7 @@ class Body {
         }
 
         if (body_handle) {
+            this.#_bodyHandle = body_handle;
             // if body_handle, need create ReadableStream to read body by host calls
             let that = this;
             this.#_stream = new ReadableStream({
@@ -75,7 +76,7 @@ class Body {
         this.#_bodyText = "";
     }
 
-    #_body_to_arraybuffer() {
+    #body_to_arraybuffer() {
         if (this.#_bodyBuffer) {
             return this.#_bodyBuffer;
         }
@@ -86,10 +87,10 @@ class Body {
         return new TextEncoder().encode(this.#_bodyText);
     }
 
-    get readable_stream() {
+    get stream() {
         // if stream is not created when constructor, we need use raw body to create stream
         if (!this.#_stream) {
-            let arraybuffer = this.#_body_to_arraybuffer();
+            let arraybuffer = this.#body_to_arraybuffer();
             this.#_stream = new ReadableStream({
                 async pull(controller) {
                     let value = new Uint8Array(arraybuffer);
@@ -101,21 +102,52 @@ class Body {
         return this.#_stream;
     }
 
-    async text() {
-        this.#_bodyUsed = true;
-        let promise = new Promise((resolve, reject) => {
-            resolve("Hello, from Request.text()!");
-        });
-        return promise;
+    get bodyUsed() {
+        return this.#_bodyUsed;
+    }
+
+    get bodyHandle() {
+        return this.#_bodyHandle;
+    }
+
+    async #read_stream_full() {
+        const chunks = [];
+        let reader = this.#_stream.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            chunks.push(value);
+        }
+        // Calculate the total length of the data and create a Uint8Array
+        const totalLength = chunks.reduce((total, chunk) => total + chunk.length, 0);
+        const uint8Array = new Uint8Array(totalLength);
+        // Copy the data from chunks to the Uint8Array
+        let offset = 0;
+        for (const chunk of chunks) {
+            uint8Array.set(chunk, offset);
+            offset += chunk.length;
+        }
+        return uint8Array;
     }
 
     async arrayBuffer() {
         this.#_bodyUsed = true;
-        let promise = new Promise((resolve, reject) => {
-            let value = new TextEncoder().encode("Hello, from Request.arrayBuffer()!");
-            resolve(value);
-        });
-        return promise;
+        if (this.#_stream) {
+            return await this.#read_stream_full();
+        }
+        return this.#body_to_arraybuffer().buffer;
+    }
+
+    async text() {
+        let arraybuffer = await this.arrayBuffer();
+        return new TextDecoder().decode(arraybuffer);
+    }
+
+    async json() {
+        let text = await this.text();
+        return JSON.parse(text);
     }
 }
 

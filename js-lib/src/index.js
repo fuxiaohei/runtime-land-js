@@ -36,24 +36,28 @@ function isPromise(p) {
 
 function responseWithPromise(promise) {
     promise.then(async response => {
-        console.log("---responseWithPromise", response, response.constructor.name)
         const headers = {};
         for (const entry of response.headers.entries()) {
             headers[entry[0]] = entry[1];
         }
-        globalThis.globalResponse = {
+        let output = {
             status: response.status,
             headers,
-            // body: await response.arrayBuffer(),
-        };
+        }
+        // if response has bodyHandle, pass it to output
+        // else, read arrayBuffer and pass it to output
+        if (response.bodyHandle) {
+            output.body_handle = response.bodyHandle;
+        } else {
+            output.body = await response.arrayBuffer();
+        }
+        globalThis.globalResponse = output;
     }).catch(error => {
-        console.log("---responseWithPromise.error", error.toString() + "," + error.stack)
+        let errorBytes = new TextEncoder().encode(error.toString() + "\n" + error.stack);
         globalThis.globalResponse = {
             status: 500,
-            headers: {
-                "x-error": error.toString(),
-            },
-            // body: error.toString(),
+            headers: {},
+            body: errorBytes.buffer,
         };
     })
 }
