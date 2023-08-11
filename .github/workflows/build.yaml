@@ -25,8 +25,7 @@ jobs:
           cargo install wizer
       - name: Install wasm-opt
         run: |
-          apt update
-          apt install binaryen
+          sudo apt install -y binaryen
       - name: Toolchain info
         run: |
           cargo --version --verbose
