@@ -2,11 +2,7 @@ use anyhow::Result;
 use land_sdk::http::Body;
 use quickjs_wasm_rs::{from_qjs_value, JSContextRef, JSValue, JSValueRef};
 
-pub fn read_body(
-    context: &JSContextRef,
-    _this: JSValueRef,
-    args: &[JSValueRef],
-) -> Result<JSValue> {
+fn read_body(context: &JSContextRef, _this: JSValueRef, args: &[JSValueRef]) -> Result<JSValue> {
     if args.len() != 1 {
         return Err(anyhow::anyhow!("read_body requires 1 argument"));
     }
@@ -20,4 +16,13 @@ pub fn read_body(
     object.set_property("done", context.value_from_bool(ok)?)?;
     object.set_property("value", context.array_buffer_value(value.as_slice())?)?;
     from_qjs_value(object)
+}
+
+pub fn register(context: &JSContextRef) -> Result<()> {
+    let hostcall = context.object_value()?;
+    hostcall.set_property("read_body", context.wrap_callback(read_body)?)?;
+    context
+        .global_object()?
+        .set_property("hostcall", hostcall)?;
+    Ok(())
 }

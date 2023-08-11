@@ -101,21 +101,9 @@ function callHandler(input) {
     // if result is promise, set then and reject
     if (isPromise(result)) {
         responseWithPromise(result);
-        return;
+    } else {
+        throw new Error("Handler function must return a promise");
     }
-
-    // if result is response, set response
-    const response = result;
-    const headers = {};
-    for (const entry of response.headers.entries()) {
-        headers[entry[0]] = entry[1];
-    }
-    globalThis.globalResponse = {
-        status: response.status,
-        statusText: response.statusText,
-        headers,
-        // body: await response.arrayBuffer(),
-    };
 }
 
 globalThis.callHandler = callHandler;

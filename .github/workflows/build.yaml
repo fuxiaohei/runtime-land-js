@@ -1,0 +1,42 @@
+name: Build Engine
+on:
+  push:
+    branches:
+      - main
+    tags: ["v*"]
+env:
+  CARGO_TERM_COLOR: always
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Update local toolchain
+        run: |
+          rustup update stable
+          rustup component add rustfmt
+          rustup target add wasm32-wasi
+          cargo install wizer
+      - name: Install wasm-opt
+        run: |
+          apt update
+          apt install binaryen
+      - name: Toolchain info
+        run: |
+          cargo --version --verbose
+          rustc --version
+      - name: Build
+        run: |
+          (cd js-lib && npm install)
+          make release
+      - name: Upload CLI
+        uses: actions/upload-artifact@v2
+        with:
+          name: land-js-engine
+          path: land_js.wizer.wasm

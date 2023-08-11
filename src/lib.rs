@@ -1,7 +1,7 @@
 use anyhow::Result;
 use http::{HeaderName, HeaderValue, StatusCode};
 use once_cell::sync::OnceCell;
-use quickjs_wasm_rs::{Deserializer, JSContextRef, JSValue, JSValueRef, Serializer};
+use quickjs_wasm_rs::{Deserializer, JSContextRef, JSValueRef, Serializer};
 use send_wrapper::SendWrapper;
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
@@ -35,24 +35,7 @@ impl Runtime {
     }
 }
 
-pub fn console_log(
-    _context: &JSContextRef,
-    _this: JSValueRef,
-    args: &[JSValueRef],
-) -> Result<JSValue> {
-    let mut spaced = false;
-    for arg in args {
-        if spaced {
-            print!(" ");
-        } else {
-            spaced = true;
-        }
-        print!("{}", arg.as_str_lossy());
-    }
-    println!();
-    Ok(JSValue::Undefined)
-}
-
+mod console;
 mod hostcall;
 
 fn init_js_context() -> Result<()> {
@@ -69,15 +52,9 @@ fn init_js_context() -> Result<()> {
     // get global object in context
     let global = context.global_object()?;
 
-    // add console.log()
-    let console = context.object_value()?;
-    console.set_property("log", context.wrap_callback(console_log)?)?;
-    global.set_property("console", console)?;
-
-    // add hostcall
-    let hostcall = context.object_value()?;
-    hostcall.set_property("read_body", context.wrap_callback(hostcall::read_body)?)?;
-    global.set_property("hostcall", hostcall)?;
+    // register js host api
+    console::register(context, std::io::stdout(), std::io::stderr())?;
+    hostcall::register(context)?;
 
     // load vendor
     let _ = context.eval_global("vendor.js", JS_VENDOR)?;
