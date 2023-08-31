@@ -10,6 +10,9 @@ globalThis.Request = Request;
 import Response from "./response";
 globalThis.Response = Response;
 
+import fetch from "./fetch";
+globalThis.fetch = fetch;
+
 import {
     ReadableStream, ReadableStreamDefaultController, ReadableStreamDefaultReader, ReadableStreamBYOBReader, ReadableStreamBYOBRequest, ReadableByteStreamController,
     ByteLengthQueuingStrategy, CountQueuingStrategy,
@@ -60,31 +63,6 @@ function responseWithPromise(promise) {
             body: errorBytes.buffer,
         };
     })
-}
-
-class FetchEvent {
-    constructor(input) {
-        this.name = "fetch";
-        this.request = input;
-    }
-    async respondWith(result) {
-        // if result is promise, set then and reject
-        if (isPromise(result)) {
-            responseWithPromise(result);
-            return;
-        }
-
-        const response = result;
-        const headers = {};
-        for (const entry of response.headers.entries()) {
-            headers[entry[0]] = entry[1];
-        }
-        globalThis.globalResponse = {
-            status: response.status,
-            headers,
-            // body: await response.arrayBuffer(),
-        };
-    }
 }
 
 function callHandler(input) {

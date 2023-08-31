@@ -9,10 +9,10 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::{io::Read, time::Instant};
 
+static PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 // JS_VENDOR is a global JS code to run.
 static JS_VENDOR: &str = include_str!("../js-lib/dist/lib.js");
-// JS_MOCK_CALLER is a global JS code to run.
-static JS_MOCK_CALLER: &str = include_str!("../js-mock-caller.js");
 // JS_RUNTIME is a global runtime to run JS code.
 static JS_RUNTIME: OnceCell<SendWrapper<Runtime>> = OnceCell::new();
 // JS_GLOBAL is a global object to run JS code.
@@ -66,11 +66,6 @@ fn init_js_context() -> Result<()> {
         "import fn from 'user.js'; globalThis.handler = fn;",
     )?;
 
-    // if MOCK=true in env, eval js-mock-caller once
-    if std::env::var("MOCK").is_ok() {
-        let _ = context.eval_global("js-mock-caller.js", JS_MOCK_CALLER)?;
-    }
-
     // wait for pending jobs
     context.execute_pending()?;
 
@@ -98,6 +93,7 @@ pub struct JsRequest {
     #[serde(default)]
     headers: HashMap<String, String>,
     body_handle: u32,
+    body: Option<ByteBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -109,12 +105,12 @@ pub struct JsResponse {
     body: Option<ByteBuf>,
 }
 
-use land_sdk::http::{error_response, Body, Request, Response};
+use land_sdk::http::{error_response, Body, Error, Request, Response};
 use land_sdk::http_main;
 
 #[http_main]
-pub fn handle_request(req: Request) -> Response {
-    match handle_js_request(req) {
+pub fn handle_request(req: Request) -> Result<Response, Error> {
+    let resp = match handle_js_request(req) {
         Ok(response) => response,
         Err(err) => {
             println!("handle_js_request error: {:?}", err);
@@ -123,7 +119,8 @@ pub fn handle_request(req: Request) -> Response {
                 .body(Body::from(err.to_string()))
                 .unwrap()
         }
-    }
+    };
+    Ok(resp)
 }
 
 fn handle_js_request(req: Request) -> Result<Response> {
@@ -141,12 +138,15 @@ fn handle_js_request(req: Request) -> Result<Response> {
         uri: req.uri().clone().to_string(),
         headers,
         body_handle: req.body().body_handle(),
+        body: None,
     };
 
     let context = JS_RUNTIME.get().unwrap().context();
     let mut serializer = Serializer::from_context(context)?;
     request.serialize(&mut serializer)?;
     let request_value = serializer.value;
+
+    println!("prepare JsRequest");
 
     let global = JS_GLOBAL.get().expect("js global not initialized");
     let handler = JS_HANDLER.get().expect("js handler not initialized");
@@ -180,6 +180,10 @@ fn handle_js_request(req: Request) -> Result<Response> {
                         HeaderValue::from_bytes(value.as_bytes())?,
                     );
                 }
+                headers.insert(
+                    HeaderName::from_static("x-powered-by"),
+                    HeaderValue::from_bytes(format!("x-land-js-{}", PKG_VERSION).as_bytes())?,
+                );
             }
 
             if response.body.is_some() {
@@ -189,7 +193,7 @@ fn handle_js_request(req: Request) -> Result<Response> {
             }
 
             if response.body_handle.is_some() {
-                let body = Body::new(response.body_handle.unwrap());
+                let body = Body::from_handle(response.body_handle.unwrap());
                 return Ok(builder.body(body).unwrap());
             }
 

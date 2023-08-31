@@ -1,0 +1,5 @@
+manifest = "v1"
+name = "return js"
+description = "Return JSON directly from a script, useful for building APIs and middleware."
+authors = []
+language = "javascript"

@@ -38,11 +38,11 @@ class Body {
                 this.#_bodyText = body;
             } else if (body instanceof FormData) {
                 // copy body to new FormData
-                /*let f = new FormData()
+                let f = new FormData()
                 for (let [k, v] of body.entries()) {
                     f.append(k, v)
-                }*/
-                this.#_bodyFormData = body;
+                }
+                this.#_bodyFormData = f;
             } else if (body instanceof URLSearchParams) {
                 this.#_bodyText = body.toString();
             } else if (body instanceof ArrayBuffer || isArrayBufferView(body)) {

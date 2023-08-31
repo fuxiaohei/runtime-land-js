@@ -1,16 +1,16 @@
 [package]
 name = "land-js"
-version = "0.1.0-b14"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.72"
+anyhow = "1.0.75"
 once_cell = "1.18.0"
 quickjs-wasm-rs = { git = "https://github.com/bytecodealliance/javy" }
 send_wrapper = "0.6.0"
-serde = { version = "1.0.183", features = ["derive"] }
+serde = { version = "1.0.188", features = ["derive"] }
 land-sdk = { path = "../runtime-land/crates/sdk" }
-wit-bindgen = "0.9.0"
+wit-bindgen = "0.11.0"
 http = "0.2.9"
 serde_bytes = "0.11.12"
 

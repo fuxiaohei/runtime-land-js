@@ -1,0 +1,5 @@
+manifest = "v1"
+name = "return html"
+description = "Deliver an HTML page from an HTML string directly inside the script"
+authors = []
+language = "javascript"
