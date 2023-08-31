@@ -16,6 +16,10 @@ class Response {
         }
         this.#_ok = this.#_status >= 200 && this.#_status < 300
         this.#_statusText = options.statusText === undefined ? '' : '' + options.statusText
+        if (options.body_handle) {
+            this.#_body = new Body(null, options.body_handle);
+            return;
+        }
         this.#_body = new Body(body);
     }
 
@@ -49,6 +53,19 @@ class Response {
 
     async json() {
         return await this.#_body.json();
+    }
+
+    static redirect(url, status) {
+        status = status || 302
+        if (status < 300 || status > 399) {
+            throw new RangeError("Failed to execute 'redirect' on 'Response': Invalid status code")
+        }
+        return new Response(null, {
+            status: status,
+            headers: {
+                "Location": url,
+            },
+        })
     }
 
 }

@@ -1,0 +1,5 @@
+manifest = "v1"
+name = "ab test"
+description = "Set up an A/B test by controlling what response is served based on cookies."
+authors = []
+language = "javascript"

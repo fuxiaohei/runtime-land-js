@@ -1,0 +1,5 @@
+manifest = "v1"
+name = "redirect"
+description = "Redirect requests from one URL to another or from one set of URLs to another set."
+authors = []
+language = "javascript"

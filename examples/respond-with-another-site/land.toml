@@ -1,0 +1,5 @@
+manifest = "v1"
+name = "Respond with another site"
+description = "Respond to the script request with the response from another website"
+authors = []
+language = "javascript"

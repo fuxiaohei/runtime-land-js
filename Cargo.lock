@@ -355,6 +355,7 @@ dependencies = [
 [[package]]
 name = "land-sdk"
 version = "0.1.1"
+source = "git+https://github.com/fuxiaohei/runtime-land#40404734c5eb2cc1fd92a055871b575853d2b2b4"
 dependencies = [
  "anyhow",
  "http",
@@ -367,6 +368,7 @@ dependencies = [
 [[package]]
 name = "land-sdk-macro"
 version = "0.1.1"
+source = "git+https://github.com/fuxiaohei/runtime-land#40404734c5eb2cc1fd92a055871b575853d2b2b4"
 dependencies = [
  "anyhow",
  "http",

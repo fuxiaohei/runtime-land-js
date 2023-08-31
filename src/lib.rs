@@ -124,7 +124,7 @@ pub fn handle_request(req: Request) -> Result<Response, Error> {
 }
 
 fn handle_js_request(req: Request) -> Result<Response> {
-    // create input JsRequest
+    // convert http request to js request
     let mut headers = HashMap::new();
     req.headers().iter().for_each(|(key, value)| {
         headers.insert(
@@ -141,17 +141,16 @@ fn handle_js_request(req: Request) -> Result<Response> {
         body: None,
     };
 
+    // serialize js request to js request object
     let context = JS_RUNTIME.get().unwrap().context();
     let mut serializer = Serializer::from_context(context)?;
     request.serialize(&mut serializer)?;
     let request_value = serializer.value;
 
-    println!("prepare JsRequest");
-
     let global = JS_GLOBAL.get().expect("js global not initialized");
     let handler = JS_HANDLER.get().expect("js handler not initialized");
 
-    // call global fetch handler with request object
+    // call global fetch handler with js request object
     match handler.call(global, &[request_value]) {
         Ok(_) => {
             let mut response: JSValueRef<'_>;
@@ -168,10 +167,12 @@ fn handle_js_request(req: Request) -> Result<Response> {
                 break;
             }
 
+            // deserialize js response object to js response
             let deserializer = &mut Deserializer::from(response);
             let response =
                 JsResponse::deserialize(deserializer).expect("deserialize response failed");
 
+            // convert js response to http response
             let mut builder = http::Response::builder().status(response.status);
             if let Some(headers) = builder.headers_mut() {
                 for (key, value) in &response.headers {
@@ -186,12 +187,14 @@ fn handle_js_request(req: Request) -> Result<Response> {
                 );
             }
 
+            // if body is bytes, create read-only body
             if response.body.is_some() {
                 let body = response.body.unwrap();
                 let body = Body::from(body.to_vec());
                 return Ok(builder.body(body).unwrap());
             }
 
+            // if body is handle, create read-write body
             if response.body_handle.is_some() {
                 let body = Body::from_handle(response.body_handle.unwrap());
                 return Ok(builder.body(body).unwrap());

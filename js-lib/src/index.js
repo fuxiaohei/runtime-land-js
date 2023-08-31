@@ -1,5 +1,8 @@
-require("fast-text-encoding");
-require("url-polyfill");
+import 'fast-text-encoding'; 
+
+import { URL, URLSearchParams } from "whatwg-url-without-unicode";
+globalThis.URL = URL;
+globalThis.URLSearchParams = URLSearchParams;
 
 import { Headers } from "headers-polyfill";
 globalThis.Headers = Headers;

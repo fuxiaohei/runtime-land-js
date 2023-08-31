@@ -68,7 +68,12 @@ class Body {
                     value = new Uint8Array(value);
                     controller.enqueue(value);
                 }
-            })
+            }, {
+                // highWaterMark means the preload chunk numbers, 0 means no preload
+                // if highWaterMark > 0, the stream will be read when created by {highWaterMark} times
+                // highWaterMark must be 0, any read operation should be affected #_bodyUsed. Otherwise, it will cause the stream had been read.
+                highWaterMark: 0
+            });
             return;
         }
 
