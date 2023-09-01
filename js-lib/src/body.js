@@ -34,23 +34,36 @@ class Body {
 
     constructor(body, body_handle) {
         if (body) {
+            let get_body_handle = false;
             if (typeof body === "string") {
                 this.#_bodyText = body;
-            } else if (body instanceof FormData) {
+            } else if (body instanceof URLSearchParams) {
+                this.#_bodyText = body.toString();
+            } else if (body instanceof ArrayBuffer || isArrayBufferView(body)) {
+                this.#_bodyBuffer = body;
+            } else if (body instanceof ReadableStream) {
+                // use stream bodyhandle as new body
+                body_handle = body[Symbol["bodyHandle"]];
+                if (!body_handle) {
+                    // FIXME: a user created ReadableStream without bodyHandle
+                    // Should read all as arrayBuffer
+                }
+                get_body_handle = true;
+            } /*else if (FormData && body instanceof FormData) {
                 // copy body to new FormData
                 let f = new FormData()
                 for (let [k, v] of body.entries()) {
                     f.append(k, v)
                 }
                 this.#_bodyFormData = f;
-            } else if (body instanceof URLSearchParams) {
-                this.#_bodyText = body.toString();
-            } else if (body instanceof ArrayBuffer || isArrayBufferView(body)) {
-                this.#_bodyBuffer = body;
-            } else {
+            } */ else {
                 this.#_bodyText = String(body);
             }
-            return;
+
+            // if got body handle, need create ReadableStream to read body by host calls
+            if (!get_body_handle) {
+                return;
+            }
         }
 
         if (body_handle) {
@@ -74,6 +87,7 @@ class Body {
                 // highWaterMark must be 0, any read operation should be affected #_bodyUsed. Otherwise, it will cause the stream had been read.
                 highWaterMark: 0
             });
+            this.#_stream[Symbol["bodyHandle"]] = body_handle
             return;
         }
 

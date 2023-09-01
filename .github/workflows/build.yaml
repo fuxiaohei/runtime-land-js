@@ -33,9 +33,10 @@ jobs:
       - name: Build
         run: |
           (cd js-lib && npm install)
+          ./install-wasi-sdk.sh
           make release
       - name: Upload CLI
         uses: actions/upload-artifact@v2
         with:
-          name: land-js-engine
-          path: land_js.wizer.wasm
+          name: js-sdk-wasm
+          path: land_js_sdk.wasm

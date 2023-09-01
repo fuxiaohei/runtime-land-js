@@ -40,11 +40,11 @@ class Request {
     }
 
     get bodyUsed() {
-        return this.body.bodyUsed;
+        return this.#_body.bodyUsed;
     }
 
     get body() {
-        return this.#_body?.stream;
+        return this.#_body.stream;
     }
 
     get url() {

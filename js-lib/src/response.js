@@ -43,6 +43,14 @@ class Response {
         return this.#_body.bodyHandle;
     }
 
+    get body() {
+        return this.#_body.stream;
+    }
+
+    get bodyUsed() {
+        return this.#_body.bodyUsed;
+    }
+
     async arrayBuffer() {
         return await this.#_body.arrayBuffer();
     }

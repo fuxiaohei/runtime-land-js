@@ -1,0 +1,5 @@
+manifest = "v1"
+name = "Aggregate requests"
+description = "Send two GET request to two urls and aggregates the responses into one response."
+authors = []
+language = "javascript"
