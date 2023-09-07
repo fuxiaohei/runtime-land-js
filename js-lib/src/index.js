@@ -1,8 +1,12 @@
-import 'fast-text-encoding'; 
+import 'fast-text-encoding';
 
 import { URL, URLSearchParams } from "whatwg-url-without-unicode";
 globalThis.URL = URL;
 globalThis.URLSearchParams = URLSearchParams;
+
+import { atob, btoa } from './builtins/base64';
+globalThis.atob = atob;
+globalThis.btoa = btoa;
 
 import { Headers } from "headers-polyfill";
 globalThis.Headers = Headers;

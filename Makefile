@@ -2,9 +2,11 @@
 
 js:
 	cd js-lib && npx rspack build --mode=development
+	ls -l js-lib/dist/lib.js
 
 js-prod:
 	cd js-lib && npx rspack build --mode=production
+	ls -l js-lib/dist/lib.js
 
 build: js
 	cargo build --target wasm32-wasi
