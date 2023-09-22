@@ -1,0 +1,14 @@
+{
+  "name": "land-js-tests",
+  "version": "0.1.4",
+  "description": "integration tests for land-js-sdk",
+  "main": "index.js",
+  "scripts": {
+    "test": "node src/index.mjs"
+  },
+  "author": "fudong0797@gmail.com",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "tar": "^6.2.0"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "land-js-lib",
-  "version": "0.1.0-b2",
+  "version": "0.1.4",
   "description": "runtime.land js sdk vendor library",
   "main": "src/index.js",
   "scripts": {

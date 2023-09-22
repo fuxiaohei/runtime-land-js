@@ -6,8 +6,8 @@ use send_wrapper::SendWrapper;
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 use std::collections::HashMap;
+use std::io::Read;
 use std::ops::Deref;
-use std::{io::Read, time::Instant};
 
 static PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -39,7 +39,6 @@ mod console;
 mod hostcall;
 
 fn init_js_context() -> Result<()> {
-    let st = Instant::now();
     let mut script = String::new();
     std::io::stdin().read_to_string(&mut script)?;
 
@@ -74,8 +73,6 @@ fn init_js_context() -> Result<()> {
     // get handler
     let handler = global.get_property("callHandler")?;
     JS_HANDLER.set(SendWrapper::new(handler)).unwrap();
-
-    println!("init js context: {:?}", st.elapsed());
 
     Ok(())
 }
