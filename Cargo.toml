@@ -1,6 +1,6 @@
 [package]
 name = "land-js"
-version = "0.1.4"
+version = "0.1.4-rc.2"
 edition = "2021"
 
 [dependencies]
@@ -11,7 +11,7 @@ send_wrapper = "0.6.0"
 serde = { version = "1.0.188", features = ["derive"] }
 #land-sdk = { path = "../runtime-land/crates/sdk" }
 land-sdk = { git = "https://github.com/fuxiaohei/runtime-land" }
-wit-bindgen = "0.11.0"
+wit-bindgen = "0.12.0"
 http = "0.2.9"
 serde_bytes = "0.11.12"
 

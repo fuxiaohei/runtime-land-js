@@ -30,10 +30,9 @@ jobs:
           rustup update stable
           rustup component add rustfmt
           rustup target add wasm32-wasi
-          cargo install wizer
       - name: Install wasm-opt
         run: |
-          sudo apt install -y binaryen
+          sudo apt install -y binaryen xz-utils
       - name: Toolchain info
         run: |
           cargo --version --verbose
@@ -41,7 +40,7 @@ jobs:
       - name: Build
         run: |
           (cd js-lib && npm install)
-          ./install-wasi-sdk.sh
+          ./install-deps.sh
           make release
           cp land_js_sdk.wasm land-js-sdk-${{ env.RELEASE_VERSION }}.wasm
       - name: Upload CLI
@@ -86,4 +85,4 @@ jobs:
           artifacts: "land-js-sdk-*"
           commit: ${{ github.sha }}
           body: |
-            This is a "nightly" release webassembly of land-js-dl. It is automatically built from the latest commit on the main branch. It includes some new features and bug fixes that have not yet been released. Be careful when using this version with land-cli as it may be unstable or incompatible.
+            This is a "nightly" release webassembly of land-js-sdk. It is automatically built from the latest commit on the main branch. It includes some new features and bug fixes that have not yet been released. Be careful when using this version with land-cli as it may be unstable or incompatible.
