@@ -1,0 +1,5 @@
+manifest = "v1"
+name = "itty router"
+description = "Serve different content based on the request with a simple router."
+authors = []
+language = "javascript"

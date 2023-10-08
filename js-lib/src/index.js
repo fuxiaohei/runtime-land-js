@@ -20,6 +20,10 @@ globalThis.Response = Response;
 import fetch from "./fetch";
 globalThis.fetch = fetch;
 
+// use itty-router as global router
+import * as itty from "itty-router";
+globalThis.itty = itty;
+
 import {
     ReadableStream, ReadableStreamDefaultController, ReadableStreamDefaultReader, ReadableStreamBYOBReader, ReadableStreamBYOBRequest, ReadableByteStreamController,
     ByteLengthQueuingStrategy, CountQueuingStrategy,
