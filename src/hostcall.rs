@@ -34,7 +34,7 @@ fn fetch_request(
     _this: JSValueRef,
     args: &[JSValueRef],
 ) -> Result<JSValue> {
-    if args.len() < 1 {
+    if args.is_empty() {
         return Err(anyhow::anyhow!("fetch_request requires 1 argument"));
     }
     let deserializer = &mut Deserializer::from(args[0]);
@@ -50,7 +50,7 @@ fn fetch_request(
             timeout: js_options.timeout,
             redirect: match js_options.redirect.as_str() {
                 "follow" => RedirectPolicy::Follow,
-                "error" => RedirectPolicy::Error,
+                // "error" => RedirectPolicy::Manual,
                 "manual" => RedirectPolicy::Manual,
                 _ => land_sdk::http::RedirectPolicy::Follow,
             },
@@ -58,10 +58,10 @@ fn fetch_request(
     } else {
         RequestOptions::default()
     };
-    
+
     // convert js_request to sdk request
     let builder = http::Request::builder()
-        .method(http::Method::from_str(&js_request.method.as_str())?)
+        .method(http::Method::from_str(js_request.method.as_str())?)
         .uri(js_request.uri.clone());
     let request = if js_request.body_handle > 0 {
         builder.body(Body::from_handle(js_request.body_handle))?

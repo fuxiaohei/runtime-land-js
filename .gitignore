@@ -21,4 +21,6 @@ Cargo.lock
 # land_js.wasm
 land_js.wasm
 land_js.wizer.wasm
+runtime_land_js.wasm
+runtime_land_js.wizer.wasm
 land-cli

@@ -8,12 +8,12 @@ js-prod:
 
 build: js
 	cargo build --target wasm32-wasi
-	cp ./target/wasm32-wasi/debug/land_js.wasm ./land_js.wasm
+	cp ./target/wasm32-wasi/debug/runtime_land_js.wasm ./runtime_land_js.wasm
 
 release: js-prod
 	cargo build --target wasm32-wasi --release
-	cp ./target/wasm32-wasi/release/land_js.wasm ./land_js.wasm
-	wasm-opt --strip-debug -o land_js.wasm land_js.wasm
+	cp ./target/wasm32-wasi/release/runtime_land_js.wasm ./runtime_land_js.wasm
+	wasm-opt --strip-debug -o runtime_land_js.wasm runtime_land_js.wasm
 
 test: release
-	cat js-mock.js | MOCK=true wizer land_js.wasm -o land_js.wizer.wasm --allow-wasi --inherit-stdio=true --inherit-env=true --wasm-bulk-memory=true
+	cat js-mock.js | MOCK=true wizer runtime_land_js.wasm -o runtime_land_js.wizer.wasm --allow-wasi --inherit-stdio=true --inherit-env=true --wasm-bulk-memory=true
